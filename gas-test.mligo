@@ -2,9 +2,12 @@
 type storage = int
 
 type params = {
+    zero: int;
     one: int;
     two: int;
     three: int;
+    four: int;
+    five: int;
   }
 
 type parameter =
@@ -13,6 +16,7 @@ type parameter =
   | RecursiveCall of int
   | RecursiveStructCall of int
   | StructCall of int
+  | StructManyArgsCall of int
   | LambdaCall of int
   | CurryCall of int
   | SelfAddress of int
@@ -26,19 +30,20 @@ let simple_call (x : int) : storage =
 
 let struct_call (x : params) : storage =
   if x.one = 10002 then (failwith "foo" : storage) else
-    x.one * x.two * x.three
+    x.zero * x.one * x.two * x.three * x.four * x.five
+
+let struct_call_many_args
+          (x : int) (y : int) (z :int) (a : int) (b : int) (c : int) : storage =
+  x * y * z * a * b * c
 
 let deep_call (x : int) : storage =
   if x = 10002 then (failwith "foo" : storage) else
-    struct_call { one = x; two = simple_call x; three = x * x }
+    struct_call { zero = x; one = x; two = simple_call x;
+                  three = x * x; four = x * 2; five = x * 3}
 
 let rec recursive_call (x : int) : storage =
   if x = 10002 then (failwith "foo" : storage) else
     if x <= 0 then 0 else recursive_call (x - 1)
-
-let rec recursive_call_many_args
-          (x,y,z,a,b,c : int * int * int * int * int * int) : storage =
-  if x <= 0 then 0 else recursive_call_many_args (x - 1,y,z,c,a,b)
 
 let rec recursive_struct_call (x : params) : storage =
   if x.one = 10002 then (failwith "foo" : storage) else
@@ -77,10 +82,13 @@ let main (action, store : parameter * storage) : return =
   (match action with
   | SimpleCall x -> simple_call x
   | DeepCall x -> deep_call x
-  | StructCall x  -> struct_call { one = x; two = x+1; three = x * 2; }
+  | StructCall x  -> struct_call { zero = x; one = x; two = x+1; three = x * 2;
+                                   four = x * 3; five = x * 5}
+  | StructManyArgsCall x -> struct_call_many_args x x (x+1) (x*2) (x*3) (x*5)
   | RecursiveCall x -> recursive_call x
   | RecursiveStructCall x ->
-     recursive_struct_call { one = x; two = x+1; three = x * 2; }
+     recursive_struct_call { zero = x; one = x; two = x+1;
+                             three = x * 2; four = x * 3; five = x * 5 }
   | LambdaCall x -> lambda_call x
   | CurryCall x -> curry_call x
   | VoidCall -> void_call
